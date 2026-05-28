@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model GasStation {
+  id              String        @id @default(cuid())
+  name            String
+  brand           String?
+  address         String
+  ward            String?
+  district        String?
+  province        String
+  latitude        Decimal       @db.Decimal(9, 6)
+  longitude       Decimal       @db.Decimal(9, 6)
+  notes           String?
+  source          String        @default("manual")
+  status          StationStatus @default(ACTIVE)
+  lastVerifiedAt  DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  submissions     GasStationSubmission[]
+
+  @@index([status])
+  @@index([province])
+  @@index([latitude, longitude])
+}
+
+model GasStationSubmission {
+  id              String           @id @default(cuid())
+  stationId       String?
+  station         GasStation?      @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  name            String
+  brand           String?
+  address         String
+  ward            String?
+  district        String?
+  province        String
+  latitude        Decimal          @db.Decimal(9, 6)
+  longitude       Decimal          @db.Decimal(9, 6)
+  notes           String?
+  submitterName   String?
+  submitterContact String?
+  photoUrl        String?
+  sourceUrl       String?
+  status          SubmissionStatus @default(PENDING)
+  moderationNotes String?
+  reviewedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([status])
+  @@index([province])
+  @@index([createdAt])
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "seed-sample-a97-hanoi-placeholder",
+    "name": "Trạm A97 mẫu - Hà Nội",
+    "brand": "Đang xác minh",
+    "address": "Vui lòng thay bằng dữ liệu đã chép từ ảnh",
+    "province": "Hà Nội",
+    "latitude": 21.027763,
+    "longitude": 105.83416,
+    "notes": "Bản ghi giữ chỗ. Thay danh sách này bằng dữ liệu đã kiểm tra từ ảnh trước khi chạy seed thật.",
+    "source": "manual-image-transcription",
+    "status": "INACTIVE"
+  }
+]

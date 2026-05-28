@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f5ef;
+  --foreground: #151515;
+  --muted: #69645d;
+  --line: #ded8cb;
+  --panel: #fffdf8;
+  --primary: #0b6b57;
+  --primary-dark: #084f42;
+  --accent: #d8432e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.a97-google-map {
+  min-height: 100%;
+  width: 100%;
+}
+
+.a97-google-map img {
+  max-width: none;
+}
+
+.a97-archipelago-label {
+  width: max-content !important;
+  height: auto !important;
+  border: 0;
+  background: transparent;
+  color: #5f5670;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.15;
+  padding: 0;
+  text-shadow:
+    -1px -1px 0 rgb(255 255 255 / 85%),
+    1px -1px 0 rgb(255 255 255 / 85%),
+    -1px 1px 0 rgb(255 255 255 / 85%),
+    1px 1px 0 rgb(255 255 255 / 85%),
+    0 1px 2px rgb(255 255 255 / 75%);
+  white-space: nowrap;
+}
+
+.a97-map-popup {
+  min-width: 220px;
+  color: var(--foreground);
+  font: 14px/1.35 Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.a97-map-popup p {
+  margin: 0.25rem 0 0;
+}
+
+.a97-map-popup a {
+  color: var(--primary);
+  display: inline-block;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.a97-map-popup-muted {
+  color: var(--muted);
+}
+
+.a97-map-popup-small {
+  font-size: 0.78rem;
+}
+
+.a97-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--primary);
+  color: white;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.a97-button:hover {
+  background: var(--primary-dark);
+}
+
+.a97-button.secondary {
+  border-color: var(--line);
+  background: white;
+  color: var(--foreground);
+}
+
+.a97-button.secondary:hover {
+  border-color: var(--primary);
+  background: #f4fbf8;
+}
+
+.a97-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 0.75rem 0.85rem;
+  color: var(--foreground);
+  outline: none;
+}
+
+.a97-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(11 107 87 / 14%);
+}
+
+.a97-label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
