@@ -24,6 +24,11 @@ export function shouldUseAdvancedMarkers(mapId = GOOGLE_MAPS_MAP_ID) {
   return mapId.trim().length > 0;
 }
 
+export function getGoogleMapsMapId(mapId = GOOGLE_MAPS_MAP_ID) {
+  const normalized = mapId.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function configureGoogleMaps() {
   if (!hasGoogleMapsApiKey()) {
     throw new Error("Thiếu NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.");
@@ -33,13 +38,14 @@ function configureGoogleMaps() {
     return;
   }
 
+  const mapId = getGoogleMapsMapId();
   setOptions({
     key: GOOGLE_MAPS_API_KEY,
     v: "weekly",
     language: GOOGLE_MAPS_LANGUAGE,
     region: GOOGLE_MAPS_REGION,
     authReferrerPolicy: "origin",
-    mapIds: shouldUseAdvancedMarkers() ? [GOOGLE_MAPS_MAP_ID] : undefined
+    mapIds: mapId ? [mapId] : undefined
   });
   isGoogleMapsConfigured = true;
 }

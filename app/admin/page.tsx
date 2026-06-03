@@ -3,21 +3,52 @@ import { SubmissionStatus } from "@/src/generated/prisma/client";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { requireAdmin } from "@/lib/auth";
 import { getPrisma } from "@/lib/db";
+import { getPaginationState } from "@/lib/pagination";
 
-export default async function AdminPage() {
+const PENDING_PAGE_SIZE = 10;
+const STATION_PAGE_SIZE = 25;
+
+type AdminPageProps = {
+  searchParams?: Promise<{
+    page?: string | string[];
+    stationPage?: string | string[];
+  }>;
+};
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   if (!(await requireAdmin())) {
     redirect("/admin/login");
   }
 
   const prisma = getPrisma();
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const [pendingCount, stationCount] = await Promise.all([
+    prisma.gasStationSubmission.count({
+      where: { status: SubmissionStatus.PENDING }
+    }),
+    prisma.gasStation.count()
+  ]);
+  const pendingPagination = getPaginationState({
+    requestedPage: resolvedSearchParams.page,
+    pageSize: PENDING_PAGE_SIZE,
+    totalCount: pendingCount
+  });
+  const stationPagination = getPaginationState({
+    requestedPage: resolvedSearchParams.stationPage,
+    pageSize: STATION_PAGE_SIZE,
+    totalCount: stationCount
+  });
   const [submissions, stations] = await Promise.all([
     prisma.gasStationSubmission.findMany({
       where: { status: SubmissionStatus.PENDING },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
+      skip: pendingPagination.skip,
+      take: pendingPagination.pageSize
     }),
     prisma.gasStation.findMany({
       orderBy: [{ status: "asc" }, { province: "asc" }, { name: "asc" }],
-      take: 200
+      skip: stationPagination.skip,
+      take: stationPagination.pageSize
     })
   ]);
 
@@ -31,6 +62,8 @@ export default async function AdminPage() {
         updatedAt: submission.updatedAt.toISOString(),
         reviewedAt: submission.reviewedAt?.toISOString() ?? null
       }))}
+      pendingPagination={pendingPagination}
+      stationPagination={stationPagination}
       stations={stations.map((station) => ({
         ...station,
         latitude: Number(station.latitude.toString()),

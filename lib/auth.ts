@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -22,12 +21,12 @@ export async function verifyAdminPassword(username: string, password: string) {
     return false;
   }
 
-  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
-  if (!passwordHash) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
     return false;
   }
 
-  return bcrypt.compare(password, passwordHash);
+  return password === adminPassword;
 }
 
 export function createSessionToken() {

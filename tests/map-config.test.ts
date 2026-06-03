@@ -10,7 +10,7 @@ import {
   VIETNAM_CENTER,
   VIETNAM_MAP_BOUNDS
 } from "@/lib/constants";
-import { shouldUseAdvancedMarkers } from "@/lib/google-maps";
+import { getGoogleMapsMapId, shouldUseAdvancedMarkers } from "@/lib/google-maps";
 
 function isInsideVietnamMapBounds(point: { latitude: number; longitude: number }) {
   return (
@@ -45,4 +45,10 @@ test("Google Maps marker mode falls back to legacy markers without a map ID", ()
   assert.equal(shouldUseAdvancedMarkers(""), false);
   assert.equal(shouldUseAdvancedMarkers("   "), false);
   assert.equal(shouldUseAdvancedMarkers("a97-google-cloud-map-id"), true);
+});
+
+test("Google Maps mapId normalization trims whitespace", () => {
+  assert.equal(getGoogleMapsMapId(""), undefined);
+  assert.equal(getGoogleMapsMapId("   "), undefined);
+  assert.equal(getGoogleMapsMapId(" my-map-id "), "my-map-id");
 });

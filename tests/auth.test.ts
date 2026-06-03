@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import bcrypt from "bcryptjs";
 import { createSessionToken, verifyAdminPassword, verifySessionToken } from "@/lib/auth";
 
-test("verifyAdminPassword accepts only configured username and bcrypt hash", async () => {
+test("verifyAdminPassword accepts only configured username and password", async () => {
   process.env.ADMIN_USERNAME = "admin";
-  process.env.ADMIN_PASSWORD_HASH = await bcrypt.hash("secret-a97", 10);
+  process.env.ADMIN_PASSWORD = "secret-a97";
 
   assert.equal(await verifyAdminPassword("admin", "secret-a97"), true);
   assert.equal(await verifyAdminPassword("admin", "wrong"), false);

@@ -1,12 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Crosshair, Loader2, MapPinned, Plus, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MAP_ISSUE_URL } from "@/lib/constants";
+import { ChevronLeft, ChevronRight, Crosshair, Loader2, MapPinned, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { Coordinates } from "@/lib/distance";
-import { filterStations } from "@/lib/station-search";
-import type { PublicStation } from "@/lib/stations";
+import type { PaginatedResult } from "@/lib/pagination";
+import type { PublicStationWithDistance } from "@/lib/stations";
 import { SubmitStationForm } from "@/components/SubmitStationForm";
 import {
   GooglePlaceAutocomplete,
@@ -28,22 +27,45 @@ type ApiResponse<T> = {
   error?: string;
 };
 
+const STATION_PAGE_SIZE = 25;
+
 export function A97App() {
-  const [stations, setStations] = useState<PublicStation[]>([]);
+  const [stations, setStations] = useState<PublicStationWithDistance[]>([]);
+  const [pagination, setPagination] = useState<Omit<
+    PaginatedResult<PublicStationWithDistance>,
+    "items"
+  > | null>(null);
+  const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [origin, setOrigin] = useState<Coordinates | null>(null);
+  const [originMeta, setOriginMeta] = useState<{
+    kind: "place" | "geolocation";
+    label: string;
+  } | null>(null);
   const [locationQuery, setLocationQuery] = useState("");
-  const [textQuery, setTextQuery] = useState("");
+  const [userLocationSelectionKey, setUserLocationSelectionKey] = useState(0);
   const [mode, setMode] = useState<"map" | "submit">("map");
-  const [radiusKm, setRadiusKm] = useState(50);
+  const [radiusKm, setRadiusKm] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(STATION_PAGE_SIZE)
+    });
 
-    fetch("/api/stations")
-      .then((response) => response.json() as Promise<ApiResponse<PublicStation[]>>)
+    if (origin) {
+      params.set("lat", String(origin.latitude));
+      params.set("lng", String(origin.longitude));
+      params.set("radiusKm", String(radiusKm));
+    }
+
+    fetch(`/api/stations?${params.toString()}`)
+      .then(
+        (response) => response.json() as Promise<ApiResponse<PaginatedResult<PublicStationWithDistance>>>
+      )
       .then((payload) => {
         if (!active) {
           return;
@@ -51,7 +73,12 @@ export function A97App() {
         if (!payload.success || !payload.data) {
           throw new Error(payload.error ?? "Không thể tải dữ liệu");
         }
-        setStations(payload.data);
+        const { items, ...nextPagination } = payload.data;
+        setStations(items);
+        setPagination(nextPagination);
+        setSelectedId((currentId) =>
+          currentId && items.some((station) => station.id === currentId) ? currentId : null
+        );
       })
       .catch((fetchError: Error) => {
         if (active) {
@@ -67,21 +94,39 @@ export function A97App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [origin, page, radiusKm]);
 
-  const orderedStations = useMemo(() => {
-    return filterStations(stations, { query: textQuery, origin, radiusKm });
-  }, [origin, textQuery, radiusKm, stations]);
+  const selectedStation = stations.find((station) => station.id === selectedId) ?? null;
+  const totalResults = pagination?.total ?? 0;
+  const currentPage = pagination?.page ?? page;
+  const totalPages = pagination?.totalPages ?? 1;
+  const hasPreviousPage = pagination?.hasPreviousPage ?? false;
+  const hasNextPage = pagination?.hasNextPage ?? false;
 
-  const selectedStation = orderedStations.find((station) => station.id === selectedId) ?? null;
+  function resetStationPage() {
+    setIsLoading(true);
+    setPage(1);
+    setSelectedId(null);
+  }
+
+  function goToStationPage(nextPage: number) {
+    setIsLoading(true);
+    setPage(Math.max(1, nextPage));
+  }
 
   function applyPlace(place: GooglePlaceSelection) {
     setOrigin({
       latitude: place.latitude,
       longitude: place.longitude
     });
-    setLocationQuery(place.name || place.address);
-    setSelectedId(null);
+    const nextLabel = place.address || place.name;
+    setLocationQuery(nextLabel);
+    setOriginMeta({
+      kind: "place",
+      label: nextLabel
+    });
+    setUserLocationSelectionKey((currentKey) => currentKey + 1);
+    resetStationPage();
     setError(null);
   }
 
@@ -98,6 +143,12 @@ export function A97App() {
           longitude: position.coords.longitude
         });
         setLocationQuery("Vị trí của tôi");
+        setOriginMeta({
+          kind: "geolocation",
+          label: "Vị trí của tôi"
+        });
+        setUserLocationSelectionKey((currentKey) => currentKey + 1);
+        resetStationPage();
         setError(null);
       },
       () => {
@@ -112,9 +163,13 @@ export function A97App() {
       <div className="min-h-[560px] overflow-hidden rounded-lg border border-[var(--line)] bg-white shadow-sm">
         {mode === "map" ? (
           <StationMap
-            stations={orderedStations}
+            stations={stations}
             selectedStation={selectedStation}
             userLocation={origin}
+            userLocationKind={originMeta?.kind ?? null}
+            userLocationLabel={originMeta?.label ?? null}
+            userLocationSelectionKey={userLocationSelectionKey}
+            radiusKm={radiusKm}
             onSelectStation={setSelectedId}
           />
         ) : (
@@ -144,77 +199,42 @@ export function A97App() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-          <h2 className="text-base font-black">Tìm địa điểm gần bạn</h2>
-          <div className="mt-3 space-y-3">
-            <GooglePlaceAutocomplete
-              label="Nhập địa điểm"
-              placeholder="Ví dụ: Nguyễn Trãi, Bình Thạnh"
-              query={locationQuery}
-              onQueryChange={setLocationQuery}
-              onSelect={applyPlace}
-            />
-            <button className="a97-button secondary w-full" type="button" onClick={locateUser}>
-              <Crosshair size={18} aria-hidden />
-              Dùng vị trí hiện tại
-            </button>
-            <label className="a97-label">
-              Bán kính tìm gần
-              <select
-                className="a97-input"
-                value={radiusKm}
-                onChange={(event) => setRadiusKm(Number(event.target.value))}
-                disabled={!origin}
-              >
-                <option value={10}>10 km</option>
-                <option value={25}>25 km</option>
-                <option value={50}>50 km</option>
-                <option value={100}>100 km</option>
-                <option value={250}>250 km</option>
-              </select>
-            </label>
-            <div className="rounded-lg border border-[var(--line)] bg-white p-3 text-sm text-[var(--muted)]">
-              {origin
-                ? `Đã đặt điểm tìm kiếm${locationQuery ? `: ${locationQuery}` : ""}. Danh sách đã lọc theo khoảng cách.`
-                : "Nhập địa điểm hoặc bật định vị để lọc theo khoảng cách."}
+        {mode === "map" ? (
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
+            <h2 className="text-base font-black">Tìm địa điểm gần bạn</h2>
+            <div className="mt-3 space-y-3">
+              <GooglePlaceAutocomplete
+                label="Nhập địa điểm"
+                placeholder="Ví dụ: Nguyễn Trãi, Bình Thạnh"
+                query={locationQuery}
+                onQueryChange={setLocationQuery}
+                onSelect={applyPlace}
+              />
+              <button className="a97-button secondary w-full" type="button" onClick={locateUser}>
+                <Crosshair size={18} aria-hidden />
+                Dùng vị trí hiện tại
+              </button>
+              <label className="a97-label">
+                Bán kính tìm gần
+                <select
+                  className="a97-input"
+                  value={radiusKm}
+                  onChange={(event) => {
+                    setRadiusKm(Number(event.target.value));
+                    resetStationPage();
+                  }}
+                  disabled={!origin}
+                >
+                  <option value={5}>5 km</option>
+                  <option value={10}>10 km</option>
+                  <option value={25}>25 km</option>
+                  <option value={50}>50 km</option>
+                  <option value={100}>100 km</option>
+                </select>
+              </label>
             </div>
           </div>
-          <a
-            className="mt-4 inline-block text-sm font-bold text-[var(--primary)]"
-            href={MAP_ISSUE_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Báo lỗi bản đồ
-          </a>
-        </div>
-
-        <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
-          <label className="a97-label">
-            <span className="flex items-center gap-2">
-              <Search size={17} aria-hidden />
-              Tìm theo tên, địa chỉ, tỉnh/thành
-            </span>
-            <input
-              className="a97-input"
-              placeholder="Ví dụ: Hà Nội, Petrolimex, QL1A"
-              value={textQuery}
-              onChange={(event) => setTextQuery(event.target.value)}
-            />
-          </label>
-        </div>
-
-        {origin ? (
-          <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-3 text-sm text-[var(--muted)]">
-            <p>
-              Danh sách đang lọc trong bán kính {radiusKm} km từ vị trí tìm kiếm.
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-3 text-sm text-[var(--muted)]">
-            Chưa có điểm tìm kiếm. Bật định vị hoặc nhập địa điểm để xem cây xăng gần nhất.
-          </div>
-        )}
+        ) : null}
 
         {error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
@@ -226,7 +246,7 @@ export function A97App() {
           <div className="border-b border-[var(--line)] px-4 py-3">
             <div className="flex items-center justify-between">
               <h2 className="font-black">Danh sách cây xăng</h2>
-              <p className="text-sm text-[var(--muted)]">{orderedStations.length} kết quả</p>
+              <p className="text-sm text-[var(--muted)]">{totalResults} kết quả</p>
             </div>
           </div>
           <div className="max-h-[520px] overflow-auto">
@@ -235,18 +255,19 @@ export function A97App() {
                 <Loader2 className="animate-spin" size={18} aria-hidden />
                 Đang tải dữ liệu...
               </div>
-            ) : orderedStations.length === 0 ? (
+            ) : stations.length === 0 ? (
               <p className="p-4 text-sm text-[var(--muted)]">
                 Không tìm thấy cây xăng phù hợp. Hãy đổi bộ lọc hoặc gửi vị trí mới.
               </p>
             ) : (
-              orderedStations.map((station) => (
+              stations.map((station) => (
                 <button
                   key={station.id}
                   type="button"
                   onClick={() => {
                     setSelectedId(station.id);
                     setMode("map");
+                    setError(null);
                   }}
                   className="block w-full border-b border-[var(--line)] px-4 py-3 text-left last:border-0 hover:bg-white"
                 >
@@ -260,6 +281,29 @@ export function A97App() {
                 </button>
               ))
             )}
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3">
+            <button
+              className="a97-button secondary"
+              type="button"
+              onClick={() => goToStationPage(page - 1)}
+              disabled={isLoading || !hasPreviousPage}
+            >
+              <ChevronLeft size={16} aria-hidden />
+              Trước
+            </button>
+            <p className="text-sm font-bold text-[var(--muted)]">
+              Trang {currentPage} / {totalPages}
+            </p>
+            <button
+              className="a97-button secondary"
+              type="button"
+              onClick={() => goToStationPage(page + 1)}
+              disabled={isLoading || !hasNextPage}
+            >
+              Sau
+              <ChevronRight size={16} aria-hidden />
+            </button>
           </div>
         </div>
       </aside>

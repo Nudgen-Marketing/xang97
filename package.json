@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "test:e2e": "playwright test",
-    "hash-password": "tsx scripts/hash-password.ts",
     "prisma:generate": "XDG_CACHE_HOME=.cache prisma generate",
     "prisma:migrate": "XDG_CACHE_HOME=.cache prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
@@ -19,7 +18,6 @@
     "@googlemaps/js-api-loader": "^2.0.2",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
-    "bcryptjs": "^3.0.2",
     "ioredis": "^5.8.2",
     "lucide-react": "^0.468.0",
     "next": "^16.2.6",

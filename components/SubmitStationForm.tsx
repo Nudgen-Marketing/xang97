@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { ArrowLeft, CheckCircle2, Crosshair, Loader2, Send } from "lucide-react";
 import { useMemo, useState } from "react";
-import { VIETNAM_CENTER } from "@/lib/constants";
 import {
   GooglePlaceAutocomplete,
   type GooglePlaceSelection
@@ -47,6 +46,11 @@ type SubmissionResponse = {
   error?: string;
 };
 
+const DEFAULT_SUBMISSION_LOCATION = {
+  latitude: 10.7769,
+  longitude: 106.7009
+};
+
 const initialState: FormState = {
   name: "",
   brand: "",
@@ -54,8 +58,8 @@ const initialState: FormState = {
   ward: "",
   district: "",
   province: "",
-  latitude: VIETNAM_CENTER.latitude,
-  longitude: VIETNAM_CENTER.longitude,
+  latitude: DEFAULT_SUBMISSION_LOCATION.latitude,
+  longitude: DEFAULT_SUBMISSION_LOCATION.longitude,
   notes: "",
   submitterName: "",
   submitterContact: "",
@@ -86,13 +90,20 @@ export function SubmitStationForm({ onSubmitted }: SubmitStationFormProps) {
       latitude: place.latitude,
       longitude: place.longitude
     }));
+    setError(null);
   }
 
   function locateUser() {
-    navigator.geolocation?.getCurrentPosition(
+    if (!navigator.geolocation) {
+      setError("Trình duyệt không hỗ trợ định vị.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
       (position) => {
         updateField("latitude", position.coords.latitude);
         updateField("longitude", position.coords.longitude);
+        setError(null);
       },
       () => setError("Không thể lấy vị trí hiện tại.")
     );
@@ -104,23 +115,28 @@ export function SubmitStationForm({ onSubmitted }: SubmitStationFormProps) {
     setError(null);
     setMessage(null);
 
-    const response = await fetch("/api/submissions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
-    const payload = (await response.json()) as SubmissionResponse;
+    try {
+      const response = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+      const payload = (await response.json()) as SubmissionResponse;
 
-    setIsSubmitting(false);
-    if (!payload.success) {
-      setError(payload.error ?? "Không thể gửi vị trí.");
-      return;
+      if (!payload.success) {
+        setError(payload.error ?? "Không thể gửi vị trí.");
+        return;
+      }
+
+      const nextSubmissionId = payload.data?.id ?? "";
+      setSubmissionId(nextSubmissionId);
+      setMessage("Hồ sơ đã gửi. Tình trạng: Chờ duyệt.");
+      setStep("done");
+    } catch {
+      setError("Không thể gửi vị trí. Hãy thử lại sau.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const nextSubmissionId = payload.data?.id ?? "";
-    setSubmissionId(nextSubmissionId);
-    setMessage("Hồ sơ đã gửi. Tình trạng: Chờ duyệt." );
-    setStep("done");
   }
 
   const hasCoordinates = useMemo(
@@ -342,6 +358,7 @@ export function SubmitStationForm({ onSubmitted }: SubmitStationFormProps) {
           onChange={(coordinates) => {
             updateField("latitude", Number(coordinates.latitude.toFixed(6)));
             updateField("longitude", Number(coordinates.longitude.toFixed(6)));
+            setError(null);
           }}
         />
       </div>
@@ -354,19 +371,16 @@ export function SubmitStationForm({ onSubmitted }: SubmitStationFormProps) {
       <div>
         <GooglePlaceAutocomplete
           label="Nhập địa chỉ"
-          placeholder="Tìm theo địa chỉ, chụp lắp hay điểm tham chiếu"
+          placeholder="Tìm theo địa chỉ, cây xăng hay điểm tham chiếu"
           query={form.address}
           onQueryChange={(address) => updateField("address", address)}
-          onSelect={(place) => {
-            applyGooglePlace(place);
-            setError(null);
-          }}
+          onSelect={applyGooglePlace}
         />
       </div>
 
-      <div className="rounded-lg border border-[var(--line)] bg-white p-3 text-sm text-[var(--muted)]">
+      <p className="text-sm text-[var(--muted)]">
         Tọa độ: {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
-      </div>
+      </p>
 
       {error ? (
         <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">

@@ -74,7 +74,7 @@ export function GooglePlaceAutocomplete({
   query,
   onQueryChange
 }: GooglePlaceAutocompleteProps) {
-  const [queryText, setQueryText] = useState(query ?? "");
+  const [uncontrolledQueryText, setUncontrolledQueryText] = useState(query ?? "");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [placesLibrary, setPlacesLibrary] = useState<PlacesLibrary | null>(null);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
@@ -82,21 +82,14 @@ export function GooglePlaceAutocomplete({
   const [error, setError] = useState<string | null>(null);
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const [selectedQuery, setSelectedQuery] = useState("");
-
-  const [prevQuery, setPrevQuery] = useState(query);
-  if (query !== prevQuery) {
-    setPrevQuery(query);
-    if (query !== undefined) {
-      setQueryText(query);
-      setSelectedQuery(query);
-      if (query.trim().length < 3) {
-        setPredictions([]);
-      }
-    }
-  }
+  const isControlled = query !== undefined;
+  const queryText = isControlled ? query : uncontrolledQueryText;
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   function syncQuery(nextQuery: string) {
-    setQueryText(nextQuery);
+    if (!isControlled) {
+      setUncontrolledQueryText(nextQuery);
+    }
     onQueryChange?.(nextQuery);
   }
 
@@ -205,7 +198,7 @@ export function GooglePlaceAutocomplete({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapperRef}>
       <label className="a97-label">
         <span className="flex items-center gap-2">
           <Search size={17} aria-hidden />
@@ -215,7 +208,12 @@ export function GooglePlaceAutocomplete({
           className="a97-input"
           placeholder={placeholder}
           value={queryText}
-          onBlur={() => {
+          onBlur={(event) => {
+            const relatedTarget = event.relatedTarget as Node | null;
+            if (relatedTarget && wrapperRef.current?.contains(relatedTarget)) {
+              return;
+            }
+
             window.setTimeout(() => setPredictions([]), 180);
           }}
           onChange={(event) => {
@@ -240,7 +238,7 @@ export function GooglePlaceAutocomplete({
         <p className="mt-2 text-sm text-[var(--muted)]">Đang tải gợi ý...</p>
       ) : null}
       {error ? <p className="mt-2 text-sm font-bold text-red-700">{error}</p> : null}
-      {predictions.length > 0 ? (
+      {predictions.length > 0 && queryText.trim().length >= 3 ? (
         <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-white shadow-lg">
           {predictions.map((prediction) => (
             <button
@@ -248,6 +246,7 @@ export function GooglePlaceAutocomplete({
               type="button"
               className="flex w-full items-start gap-2 border-b border-[var(--line)] px-3 py-3 text-left text-sm last:border-0 hover:bg-[#f4fbf8]"
               onMouseDown={(event) => event.preventDefault()}
+              onPointerDown={(event) => event.preventDefault()}
               onClick={() => void selectPrediction(prediction)}
             >
               <MapPin className="mt-0.5 shrink-0 text-[var(--primary)]" size={17} aria-hidden />

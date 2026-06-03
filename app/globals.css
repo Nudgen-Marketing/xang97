@@ -60,6 +60,83 @@ select {
   white-space: nowrap;
 }
 
+.a97-map-marker {
+  --marker-bg: var(--primary);
+  --marker-border: var(--primary-dark);
+  --marker-accent: var(--accent);
+  --marker-scale: 1;
+  position: relative;
+  display: grid;
+  height: 52px;
+  width: 52px;
+  place-items: center;
+  transform: translateY(-7px) scale(var(--marker-scale));
+  transform-origin: 50% 100%;
+}
+
+.a97-map-marker::after {
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  left: 10px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgb(21 21 21 / 18%);
+  content: "";
+  filter: blur(3px);
+}
+
+.a97-map-marker-badge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  height: 42px;
+  width: 42px;
+  place-items: center;
+  border: 3px solid white;
+  background: var(--marker-bg);
+  box-shadow:
+    0 6px 14px rgb(21 21 21 / 24%),
+    inset 0 0 0 2px var(--marker-border);
+  color: white;
+}
+
+.a97-map-marker-badge svg {
+  display: block;
+}
+
+.a97-map-marker-station .a97-map-marker-badge {
+  border-radius: 999px;
+}
+
+.a97-map-marker-station::before {
+  position: absolute;
+  bottom: 5px;
+  z-index: 1;
+  width: 17px;
+  height: 17px;
+  border: 2px solid white;
+  background: var(--marker-accent);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  content: "";
+}
+
+.a97-map-marker-location {
+  height: 52px;
+  width: 52px;
+}
+
+.a97-map-marker-location .a97-map-marker-badge {
+  height: 40px;
+  width: 40px;
+  border-radius: 999px 999px 999px 8px;
+  transform: rotate(-45deg);
+}
+
+.a97-map-marker-location .a97-map-marker-badge > * {
+  transform: rotate(45deg);
+}
+
 .a97-map-popup {
   min-width: 220px;
   color: var(--foreground);
