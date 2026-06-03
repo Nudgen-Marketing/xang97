@@ -29,6 +29,14 @@ type ApiResponse<T> = {
 
 const STATION_PAGE_SIZE = 25;
 
+type WebMcpToolInput = Record<string, unknown>;
+
+type WebMcpNavigator = Navigator & {
+  modelContext?: {
+    provideContext?: (context: unknown) => void | Promise<void>;
+  };
+};
+
 export function A97App() {
   const [stations, setStations] = useState<PublicStationWithDistance[]>([]);
   const [pagination, setPagination] = useState<Omit<
@@ -48,6 +56,81 @@ export function A97App() {
   const [radiusKm, setRadiusKm] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const provideContext = (navigator as WebMcpNavigator).modelContext?.provideContext;
+
+    if (!provideContext) {
+      return;
+    }
+
+    void provideContext({
+      tools: [
+        {
+          name: "find_a97_stations",
+          description: "Search approved A97 gas stations in Vietnam.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              page: { type: "integer", minimum: 1 },
+              pageSize: { type: "integer", minimum: 1, maximum: 100 },
+              lat: { type: "number", minimum: 8, maximum: 24 },
+              lng: { type: "number", minimum: 102, maximum: 110 },
+              radiusKm: { type: "number", minimum: 1, maximum: 500 }
+            },
+            additionalProperties: false
+          },
+          execute: async (input: WebMcpToolInput = {}) => {
+            const params = new URLSearchParams();
+
+            for (const [key, value] of Object.entries(input)) {
+              if (value !== undefined && value !== null && value !== "") {
+                params.set(key, String(value));
+              }
+            }
+
+            const response = await fetch(`/api/stations?${params.toString()}`);
+            return response.json();
+          }
+        },
+        {
+          name: "submit_a97_station",
+          description: "Submit a candidate A97 gas station for moderator review.",
+          inputSchema: {
+            type: "object",
+            required: ["name", "address", "province", "latitude", "longitude"],
+            properties: {
+              name: { type: "string", minLength: 2, maxLength: 160 },
+              brand: { type: "string", maxLength: 500 },
+              address: { type: "string", minLength: 5, maxLength: 260 },
+              ward: { type: "string", maxLength: 500 },
+              district: { type: "string", maxLength: 500 },
+              province: { type: "string", minLength: 2, maxLength: 120 },
+              latitude: { type: "number", minimum: 8, maximum: 24 },
+              longitude: { type: "number", minimum: 102, maximum: 110 },
+              notes: { type: "string", maxLength: 500 },
+              submitterName: { type: "string", maxLength: 500 },
+              submitterContact: { type: "string", maxLength: 500 },
+              photoUrl: { type: "string", format: "uri", maxLength: 500 },
+              sourceUrl: { type: "string", format: "uri", maxLength: 500 }
+            },
+            additionalProperties: false
+          },
+          execute: async (input: WebMcpToolInput) => {
+            const response = await fetch("/api/submissions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(input)
+            });
+
+            return response.json();
+          }
+        }
+      ]
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;

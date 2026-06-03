@@ -3,7 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Tra cứu cây xăng A97",
-  description: "Tìm và đóng góp vị trí cây xăng bán A97 tại Việt Nam."
+  description: "Tìm và đóng góp vị trí cây xăng bán A97 tại Việt Nam.",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({
