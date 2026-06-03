@@ -88,6 +88,12 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+            NEXT_PUBLIC_GOOGLE_MAP_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_MAP_ID }}
+            NEXT_PUBLIC_GOOGLE_MAP_LANGUAGE=${{ secrets.NEXT_PUBLIC_GOOGLE_MAP_LANGUAGE }}
+            NEXT_PUBLIC_GOOGLE_MAP_REGION=${{ secrets.NEXT_PUBLIC_GOOGLE_MAP_REGION }}
+            NEXT_PUBLIC_MAP_ISSUE_URL=${{ secrets.NEXT_PUBLIC_MAP_ISSUE_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

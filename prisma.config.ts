@@ -11,7 +11,8 @@ for (const envFile of [".env.local", ".env"]) {
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
-    path: "prisma/migrations"
+    path: "prisma/migrations",
+    seed: "npx tsx prisma/seed.ts"
   },
   datasource: {
     url: process.env.DATABASE_URL ?? "postgresql://a97:a97@localhost:5432/a97_finder"
