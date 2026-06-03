@@ -1,6 +1,8 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   VIETNAM_CENTER
 } from "@/lib/constants";
@@ -99,33 +101,17 @@ function createFuelGlyphElement({ size = 18 }: { size?: number } = {}) {
 }
 
 function createLocationPinGlyphElement({ size = 18 }: { size?: number } = {}) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.dataset.lucideGlyph = "map-pin";
-  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  svg.setAttribute("width", String(size));
-  svg.setAttribute("height", String(size));
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("fill", "none");
-  svg.setAttribute("stroke", "white");
-  svg.setAttribute("stroke-width", "2.5");
-  svg.setAttribute("stroke-linecap", "round");
-  svg.setAttribute("stroke-linejoin", "round");
-  svg.setAttribute("aria-hidden", "true");
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute(
-    "d",
-    "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+  const template = document.createElement("template");
+  template.innerHTML = renderToStaticMarkup(
+    <MapPin
+      aria-hidden
+      data-lucide-glyph="map-pin"
+      size={size}
+      strokeWidth={2.5}
+    />
   );
-  svg.append(path);
 
-  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  circle.setAttribute("cx", "12");
-  circle.setAttribute("cy", "10");
-  circle.setAttribute("r", "3");
-  svg.append(circle);
-
-  return svg;
+  return template.content.firstElementChild ?? document.createElement("span");
 }
 
 function createCustomPinElement(options: PinOptions) {
@@ -276,8 +262,8 @@ function createPinMarker(
 
   if (options.pin.glyph && typeof options.pin.glyph !== "string") {
     if (
-      options.pin.glyph instanceof HTMLElement &&
-      options.pin.glyph.dataset.lucideGlyph === "map-pin"
+      options.pin.glyph instanceof Element &&
+      (options.pin.glyph as HTMLElement).dataset.lucideGlyph === "map-pin"
     ) {
       return new google.maps.Marker({
         map,
