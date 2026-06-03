@@ -14,20 +14,6 @@ export const VIETNAM_MAP_BOUNDS = {
   }
 };
 
-export const VIETNAM_ARCHIPELAGOS = [
-  {
-    id: "hoang-sa",
-    name: "Quần đảo Hoàng Sa",
-    latitude: 16.5,
-    longitude: 112.0
-  },
-  {
-    id: "truong-sa",
-    name: "Quần đảo Trường Sa",
-    latitude: 10.0,
-    longitude: 114.0
-  }
-] as const;
 
 export const STATIONS_CACHE_KEY = "a97:stations:active:v1";
 export const STATIONS_CACHE_TTL_SECONDS = 60 * 30;

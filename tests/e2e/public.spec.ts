@@ -9,8 +9,6 @@ test("public app loads map-first A97 experience", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: /Tra cứu cây xăng bán A97/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /Dùng vị trí hiện tại/i })).toBeVisible();
   await expect(page.getByTestId("google-map-shell")).toBeVisible();
-  await expect(page.getByText("Quần đảo Hoàng Sa")).toBeVisible();
-  await expect(page.getByText("Quần đảo Trường Sa")).toBeVisible();
   await expect(page.getByRole("heading", { name: /Danh sách cây xăng/i })).toBeVisible();
   await expect(page.getByText(/Trang \d+ \/ \d+/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Trước/i })).toBeVisible();

@@ -42,8 +42,6 @@ muốn dùng Map ID (vector map styling) và Advanced Marker. Nếu cấu hình 
 trắng/xanh một màu sau khi pan/zoom hoặc sau khi chọn địa chỉ tìm kiếm. Khi gặp lỗi này, thử đặt
 `NEXT_PUBLIC_GOOGLE_MAP_ID=""` rồi restart dev server để xác nhận nguyên nhân.
 
-Bản đồ có lớp nhãn ứng dụng cho `Quần đảo Hoàng Sa - Việt Nam` và `Quần đảo Trường Sa - Việt Nam`
-để không phụ thuộc vào nhãn nền của Google Maps.
 
 Khuyến nghị production:
 

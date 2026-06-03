@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  VIETNAM_ARCHIPELAGOS,
   VIETNAM_CENTER
 } from "@/lib/constants";
 import type { Coordinates } from "@/lib/distance";
@@ -308,45 +307,7 @@ function createPinMarker(
   });
 }
 
-function createTextMarker(
-  libraries: GoogleMapLibraries,
-  map: google.maps.Map,
-  options: {
-    position: google.maps.LatLngLiteral;
-    title: string;
-    text: string;
-  }
-): MapMarker {
-  if (shouldUseAdvancedMarkers()) {
-    return new libraries.markerLibrary.AdvancedMarkerElement({
-      map,
-      position: options.position,
-      content: createArchipelagoLabel(options.text),
-      title: options.title
-    });
-  }
 
-  return new google.maps.Marker({
-    map,
-    position: options.position,
-    title: options.title,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      fillOpacity: 0,
-      scale: 0,
-      strokeOpacity: 0
-    },
-    label: createLegacyLabel(options.text, "#0b3f35"),
-    optimized: false
-  });
-}
-
-function createArchipelagoLabel(name: string) {
-  const label = document.createElement("div");
-  label.className = "a97-archipelago-label";
-  label.textContent = name;
-  return label;
-}
 
 function createStationInfoContent(station: PublicStation) {
   const wrapper = document.createElement("div");
@@ -445,9 +406,7 @@ function GoogleMapFallback({ minHeightClass }: { minHeightClass: string }) {
           Thêm `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` đã giới hạn domain và bật Maps JavaScript API,
           Places API để hiển thị bản đồ.
         </p>
-        <p className="mt-3 text-xs font-bold">
-          Quần đảo Hoàng Sa · Quần đảo Trường Sa
-        </p>
+
       </div>
     </div>
   );
@@ -482,7 +441,7 @@ export function StationMap({
   const stationMarkerByIdRef = useRef<Map<string, MapMarker>>(new Map());
   const userMarkerRef = useRef<MapMarker | null>(null);
   const radiusCircleRef = useRef<google.maps.Circle | null>(null);
-  const labelMarkersRef = useRef<MapMarker[]>([]);
+
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -514,14 +473,7 @@ export function StationMap({
         const map = createMap(mapElementRef.current, libraries.mapsLibrary, {});
         mapRef.current = map;
         infoWindowRef.current = new libraries.mapsLibrary.InfoWindow();
-        labelMarkersRef.current = VIETNAM_ARCHIPELAGOS.map(
-          (archipelago) =>
-            createTextMarker(libraries, map, {
-              position: { lat: archipelago.latitude, lng: archipelago.longitude },
-              text: archipelago.name,
-              title: archipelago.name
-            })
-        );
+
         setIsReady(true);
       } catch (error) {
         if (!cancelled) {
@@ -538,9 +490,7 @@ export function StationMap({
       stationMarkersRef.current.forEach((marker) => {
         clearMarker(marker);
       });
-      labelMarkersRef.current.forEach((marker) => {
-        clearMarker(marker);
-      });
+
       if (userMarkerRef.current) {
         clearMarker(userMarkerRef.current);
       }
@@ -549,7 +499,7 @@ export function StationMap({
       }
       stationMarkersRef.current = [];
       stationMarkerById.clear();
-      labelMarkersRef.current = [];
+
       userMarkerRef.current = null;
       radiusCircleRef.current = null;
       mapRef.current = null;
@@ -743,7 +693,7 @@ export function PickerMap({ value, onChange }: PickerMapProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const librariesRef = useRef<GoogleMapLibraries | null>(null);
   const markerRef = useRef<MapMarker | null>(null);
-  const labelMarkersRef = useRef<MapMarker[]>([]);
+
   const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const initialValueRef = useRef(value);
   const onChangeRef = useRef(onChange);
@@ -783,14 +733,7 @@ export function PickerMap({ value, onChange }: PickerMapProps) {
           zoom: 13
         });
         mapRef.current = map;
-        labelMarkersRef.current = VIETNAM_ARCHIPELAGOS.map(
-          (archipelago) =>
-            createTextMarker(libraries, map, {
-              position: { lat: archipelago.latitude, lng: archipelago.longitude },
-              text: archipelago.name,
-              title: archipelago.name
-            })
-        );
+
         listenerRef.current = map.addListener("click", (event: google.maps.MapMouseEvent) => {
           if (!event.latLng) {
             return;
@@ -814,13 +757,11 @@ export function PickerMap({ value, onChange }: PickerMapProps) {
       cancelled = true;
       window.gm_authFailure = previousAuthFailure;
       listenerRef.current?.remove();
-      labelMarkersRef.current.forEach((marker) => {
-        clearMarker(marker);
-      });
+
       if (markerRef.current) {
         clearMarker(markerRef.current);
       }
-      labelMarkersRef.current = [];
+
       markerRef.current = null;
       mapRef.current = null;
     };
